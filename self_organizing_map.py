@@ -35,5 +35,38 @@ for i, x in enumerate(X):
     
 mappings = som.win_map(X)
 # mapping coordinates of the white grid in som
-frauds = np.concatenate((mappings[(7,1)], mappings[(8,1)]), axis=0)
+frauds = np.concatenate((mappings[(4,5)], mappings[(6,7)]), axis=0)
 frauds = sc.inverse_transform(frauds)
+
+
+customers = dataset.iloc[:, 1:].values
+
+is_fraud = np.zeros(len(dataset))
+for i in range(len(dataset)):
+    if dataset.iloc[i, 0] in frauds:
+        is_fraud[i] = 1
+        
+        
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+customers = sc.fit_transform(customers)
+
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+classifier = Sequential()
+
+classifier.add(Dense(units=6, kernel_initializer="uniform", activation="relu", input_dim=customers.shape[1]))
+
+classifier.add(Dense(units=1, kernel_initializer="uniform", activation="sigmoid"))
+
+classifier.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+
+classifier.fit(customers, is_fraud, batch_size=1, epochs=10)
+
+y_pred = classifier.predict(customers)
+
+y_pred = np.concatenate((dataset.iloc[:,0:1].values, y_pred), axis=1)
+
+y_pred = y_pred[y_pred[:,1].argsort()]
